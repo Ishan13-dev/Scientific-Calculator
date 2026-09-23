@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Ishan Verma">
+    <meta name="description" content="Advanced calculator with scientific functions, bracket support, themes, keyboard shortcuts and persistent history.">
+    <title>Advanced Calculator | Ishan Verma</title>
+    <link rel="stylesheet" href="script_v2.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 min-h-screen text-white transition-colors duration-300">
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <header class="text-center mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-4">
+                Advanced Calculator
+            </h1>
+            <div class="flex justify-center gap-3">
+                <button id="themeToggle" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200 text-sm" type="button">
+                    🌙 Dark
+                </button>
+                <button id="modeToggle" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded-lg transition-colors duration-200 text-sm" type="button">
+                    Basic
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <section class="lg:col-span-2">
+                <div class="bg-slate-800 rounded-2xl p-4 shadow-2xl border border-blue-700">
+                    <div class="mb-4">
+                        <div id="previousDisplay" class="text-right text-blue-300 text-sm h-5 overflow-hidden"></div>
+                        <input
+                            type="text"
+                            id="display"
+                            class="w-full text-right text-2xl md:text-3xl p-3 rounded-lg bg-slate-700 border-2 border-blue-500 outline-none text-cyan-100 font-mono"
+                            aria-label="Calculator display"
+                        >
+                    </div>
+
+                    <!-- Scientific Row -->
+                    <div id="scientificButtons" class="grid grid-cols-4 gap-2 mb-2 hidden">
+                        <button class="btn btn-scientific" data-key="sin" type="button">sin</button>
+                        <button class="btn btn-scientific" data-key="cos" type="button">cos</button>
+                        <button class="btn btn-scientific" data-key="tan" type="button">tan</button>
+                        <button class="btn btn-scientific" data-key="log" type="button">log</button>
+                        <button class="btn btn-scientific" data-key="ln" type="button">ln</button>
+                        <button class="btn btn-scientific" data-key="sqrt" type="button">√</button>
+                        <button class="btn btn-scientific" data-key="square" type="button">x²</button>
+                        <button class="btn btn-scientific" data-key="cube" type="button">x³</button>
+                        <button class="btn btn-scientific" data-key="power" type="button">x^y</button>
+                        <button class="btn btn-scientific" data-key="factorial" type="button">n!</button>
+                        <button class="btn btn-scientific" data-key="pi" type="button">π</button>
+                        <button class="btn btn-scientific" data-key="e" type="button">e</button>
+                        <button class="btn btn-scientific" data-key="(" type="button">(</button>
+                        <button class="btn btn-scientific" data-key=")" type="button">)</button>
+                        <button class="btn btn-scientific" data-key="[" type="button">[</button>
+                        <button class="btn btn-scientific" data-key="]" type="button">]</button>
+                        <button class="btn btn-scientific" data-key="{" type="button">{</button>
+                        <button class="btn btn-scientific" data-key="}" type="button">}</button>
+                    </div>
+
+                    <!-- Main Calculator Grid - Classical Layout -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="btn btn-action" data-key="clear" type="button">C</button>
+                        <button class="btn btn-action" data-key="backspace" type="button">⌫</button>
+                        <button class="btn btn-operator" data-key="%" type="button">%</button>
+                        <button class="btn btn-operator" data-key="/" type="button">÷</button>
+
+                        <button class="btn btn-number" data-key="7" type="button">7</button>
+                        <button class="btn btn-number" data-key="8" type="button">8</button>
+                        <button class="btn btn-number" data-key="9" type="button">9</button>
+                        <button class="btn btn-operator" data-key="*" type="button">×</button>
+
+                        <button class="btn btn-number" data-key="4" type="button">4</button>
+                        <button class="btn btn-number" data-key="5" type="button">5</button>
+                        <button class="btn btn-number" data-key="6" type="button">6</button>
+                        <button class="btn btn-operator" data-key="-" type="button">-</button>
+
+                        <button class="btn btn-number" data-key="1" type="button">1</button>
+                        <button class="btn btn-number" data-key="2" type="button">2</button>
+                        <button class="btn btn-number" data-key="3" type="button">3</button>
+                        <button class="btn btn-operator" data-key="+" type="button">+</button>
+
+                        <button class="btn btn-number" data-key="0" type="button">0</button>
+                        <button class="btn btn-number" data-key="." type="button">.</button>
+                        <button class="btn btn-equals col-span-2" data-key="=" type="button">=</button>
+                    </div>
+                </div>
+            </section>
+
+            <aside class="lg:col-span-1">
+                <div class="bg-slate-800 rounded-2xl p-4 shadow-2xl border border-blue-700 h-full flex flex-col">
+                    <div class="flex justify-between items-center mb-3 cursor-pointer" id="historyToggle">
+                        <h2 class="text-lg font-semibold text-cyan-300">My History</h2>
+                        <span id="historyArrow" class="text-cyan-300 transition-transform duration-300">▼</span>
+                    </div>
+                    <div id="historySection" class="hidden">
+                        <div class="flex justify-between items-center mb-3">
+                            <button id="clearHistory" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs transition-colors" type="button">
+                                Clear
+                            </button>
+                        </div>
+                        <div id="history" class="flex-1 overflow-y-auto space-y-2 p-2 bg-slate-700 rounded-lg max-h-64">
+                            <p class="text-blue-300 text-center py-4 text-sm">No calculations yet</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+
+        <div class="text-center mt-4 text-blue-300 text-xs">
+            <button id="helpBtn" class="hover:text-cyan-300 underline" type="button">
+                Keyboard shortcuts available ⌨️
+            </button>
+        </div>
+
+        <footer class="text-center mt-6 text-slate-400 text-xs">
+            <p>Advanced Calculator</p>
+            <p>Created by <strong class="text-cyan-300">Ishan Verma</strong></p>
+        </footer>
+    </main>
+
+    <div id="helpModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-blue-700">
+            <h3 class="text-xl font-semibold mb-4 text-cyan-300">Keyboard Shortcuts</h3>
+            <div class="space-y-2 text-sm text-blue-100">
+                <p><kbd>0-9</kbd> Numbers</p>
+                <p><kbd>+, -, *, /, %</kbd> Operations</p>
+                <p><kbd>( ) [ ] { }</kbd> Brackets (scientific mode)</p>
+                <p><kbd>Enter / =</kbd> Calculate</p>
+                <p><kbd>Backspace</kbd> Delete</p>
+                <p><kbd>Escape / C</kbd> Clear</p>
+                <p><kbd>Ctrl+T</kbd> Toggle theme</p>
+                <p><kbd>Ctrl+M</kbd> Toggle mode</p>
+                <p><kbd>Ctrl+L</kbd> Clear history</p>
+            </div>
+            <button id="closeModal" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg" type="button">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <script src="script_v2.js"></script>
+</body>
+</html>
