@@ -8,7 +8,7 @@ A responsive, browser-based advanced calculator built with **HTML, CSS and JavaS
 
 ## Live Demo
 
-https://ishan13-dev.github.io/Advanced-calculator/
+https://ishan13-dev.github.io/Scientific-Calculator/
 > The live deployment should be redeployed after replacing the project files with the updated versions in this package.
 
 ## Features
