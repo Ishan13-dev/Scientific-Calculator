@@ -87,13 +87,19 @@ class Calculator {
             btn.addEventListener('click', () => this.handleScientific(btn.dataset.key));
         });
 
-        document.querySelector('.btn-equals').addEventListener('click', () => this.calculate());
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
         this.modeToggle.addEventListener('click', () => this.toggleMode());
         this.clearHistoryBtn.addEventListener('click', () => this.clearHistory());
         this.helpBtn.addEventListener('click', () => this.showModal());
         this.closeModal.addEventListener('click', () => this.hideModal());
         this.historyToggle.addEventListener('click', () => this.toggleHistory());
+
+        // Handle equals button
+        const equalsButton = document.querySelector('.btn-equals');
+
+        if (equalsButton) {
+            equalsButton.addEventListener('click', () => this.calculate());
+        }
 
         this.helpModal.addEventListener('click', e => {
             if (e.target === this.helpModal) this.hideModal();
@@ -132,6 +138,7 @@ class Calculator {
 
             if (e.ctrlKey) {
                 const key = e.key.toLowerCase();
+
                 if (key === 't') {
                     e.preventDefault();
                     this.toggleTheme();
@@ -142,17 +149,18 @@ class Calculator {
                     e.preventDefault();
                     this.clearHistory();
                 }
+
                 return;
             }
 
-            // Handle Enter key always (for both focused and unfocused display)
+            // Handle Enter key always
             if (e.key === 'Enter' || e.key === '=') {
                 e.preventDefault();
                 this.calculate();
                 return;
             }
 
-            // When display is focused, allow normal editing (only handle Enter)
+            // When display is focused, allow normal editing
             if (isDisplayFocused) {
                 return;
             }
@@ -188,16 +196,21 @@ class Calculator {
     handleNumber(key) {
         if (key === '.') {
             const currentNumber = this.getCurrentNumber();
+
             if (currentNumber.includes('.')) return;
 
-            if (this.currentInput === '' || /[+\-*/%(\[{]$/.test(this.currentInput)) {
+            if (
+                this.currentInput === '' ||
+                /[+\-*/%(\[{]$/.test(this.currentInput)
+            ) {
                 this.currentInput += '0.';
                 this.updateDisplay();
                 return;
             }
         }
 
-        // Implicit multiplication after a closing bracket, e.g. (2+3)5 -> (2+3)*5
+        // Implicit multiplication after a closing bracket
+        // Example: (2+3)5 -> (2+3)*5
         if (/[\)\]\}]$/.test(this.currentInput) && /[0-9.]/.test(key)) {
             this.currentInput += '*';
         }
@@ -217,6 +230,7 @@ class Calculator {
                 this.currentInput = '-';
                 this.updateDisplay();
             }
+
             return;
         }
 
@@ -226,16 +240,17 @@ class Calculator {
             return;
         }
 
-        // Do not leave an operator immediately after an opening bracket.
+        // Do not leave an operator immediately after an opening bracket
         if (/[\(\[\{]$/.test(this.currentInput)) {
             if (operator === '-') {
                 this.currentInput += operator;
                 this.updateDisplay();
             }
+
             return;
         }
 
-        // Implicit multiplication: 2(3) and 2[3].
+        // Implicit multiplication
         if (/[\)\]\}]$/.test(this.currentInput)) {
             this.currentInput += operator;
         } else {
@@ -248,23 +263,47 @@ class Calculator {
     handleBracket(bracket) {
         const opening = ['(', '[', '{'];
         const closing = [')', ']', '}'];
-        const pairs = { ')': '(', ']': '[', '}': '{' };
 
+        const pairs = {
+            ')': '(',
+            ']': '[',
+            '}': '{'
+        };
+
+        // Opening brackets
         if (opening.includes(bracket)) {
-            // 2(3) and )(
+
+            // Implicit multiplication
+            // Examples:
+            // 2(3)
+            // 2[3]
+            // 2{3}
+            // )( 
             if (/[\d\)\]\}πe]$/.test(this.currentInput)) {
                 this.currentInput += '*';
             }
+
             this.currentInput += bracket;
             this.updateDisplay();
+
             return;
         }
 
+        // Closing brackets
         if (closing.includes(bracket)) {
-            if (!this.canCloseBracket(pairs[bracket])) return;
 
-            // Prevent empty groups such as () or ( + ).
-            if (/[\(\[\{+\-*/%]$/.test(this.currentInput)) return;
+            // Make sure the correct opening bracket exists
+            if (!this.canCloseBracket(pairs[bracket])) {
+                return;
+            }
+
+            // Prevent empty groups
+            // Examples: ()
+            // [)
+            // {]
+            if (/[\(\[\{+\-*/%]$/.test(this.currentInput)) {
+                return;
+            }
 
             this.currentInput += bracket;
             this.updateDisplay();
@@ -273,17 +312,34 @@ class Calculator {
 
     canCloseBracket(openingBracket) {
         const stack = [];
-        const pairs = { ')': '(', ']': '[', '}': '{' };
+
+        const pairs = {
+            ')': '(',
+            ']': '[',
+            '}': '{'
+        };
 
         for (const char of this.currentInput) {
-            if (['(', '[', '{'].includes(char)) {
+
+            // Opening bracket
+            if ('([{'.includes(char)) {
                 stack.push(char);
-            } else if ([')', ']', '}'].includes(char)) {
-                if (!stack.length || stack.pop() !== pairs[char]) return false;
+            }
+
+            // Closing bracket
+            else if (')]}'.includes(char)) {
+
+                if (!stack.length || stack.pop() !== pairs[char]) {
+                    return false;
+                }
             }
         }
 
-        return stack.includes(openingBracket);
+        // IMPORTANT:
+        // The bracket we are trying to close must be
+        // the LAST currently open bracket.
+        return stack.length > 0 &&
+               stack[stack.length - 1] === openingBracket;
     }
 
     handleAction(action) {
@@ -292,6 +348,7 @@ class Calculator {
             this.previousResult = '';
             this.previousDisplay.textContent = '';
             this.updateDisplay();
+
         } else if (action === 'backspace') {
             this.currentInput = this.currentInput.slice(0, -1);
             this.updateDisplay();
@@ -316,20 +373,36 @@ class Calculator {
         if (func === 'pi') {
             this.appendImplicitMultiplicationIfNeeded();
             this.currentInput += 'pi';
+
         } else if (func === 'e') {
             this.appendImplicitMultiplicationIfNeeded();
             this.currentInput += 'e';
+
         } else if (func === 'factorial') {
             this.currentInput += '!';
-        } else if (func === '(' || func === ')') {
+
+        // FIX:
+        // Support all bracket types:
+        // ()
+        // []
+        // {}
+        } else if (['(', ')', '[', ']', '{', '}'].includes(func)) {
             this.handleBracket(func);
+
         } else if (functionAppend[func]) {
+
             // For power functions, remove trailing operator and add power
-            if (func === 'square' || func === 'cube' || func === 'power') {
+            if (
+                func === 'square' ||
+                func === 'cube' ||
+                func === 'power'
+            ) {
                 if (/[\+\-\*\/\%]$/.test(this.currentInput)) {
                     this.currentInput = this.currentInput.slice(0, -1);
                 }
+
                 this.currentInput += functionAppend[func];
+
             } else {
                 this.appendImplicitMultiplicationIfNeeded();
                 this.currentInput += functionAppend[func];
@@ -363,7 +436,8 @@ class Calculator {
                 expression = expression.slice(0, -1);
             }
 
-            // Normalize square/curly brackets to parentheses for JavaScript evaluation.
+            // Normalize square and curly brackets to parentheses
+            // for JavaScript evaluation.
             expression = expression
                 .replace(/\[/g, '(')
                 .replace(/\]/g, ')')
@@ -372,7 +446,8 @@ class Calculator {
 
             console.log('After bracket normalization:', expression);
 
-            // Balance only missing closing brackets. Mismatched brackets are rejected.
+            // Check all bracket types
+            // BEFORE normalization.
             if (!this.bracketsAreBalanced(this.currentInput)) {
                 throw new Error('Unbalanced brackets');
             }
@@ -389,15 +464,25 @@ class Calculator {
 
             console.log('Result:', result);
 
-            if (!Number.isFinite(result)) throw new Error('Math error');
+            if (!Number.isFinite(result)) {
+                throw new Error('Math error');
+            }
 
             const formattedResult = this.formatResult(result);
+
             this.previousDisplay.textContent = `${this.currentInput} =`;
+
             this.display.value = formattedResult;
-            this.addToHistory(this.currentInput, formattedResult);
+
+            this.addToHistory(
+                this.currentInput,
+                formattedResult
+            );
 
             this.previousResult = formattedResult;
+
             this.currentInput = formattedResult.toString();
+
         } catch (error) {
             console.error('Error:', error);
             this.showError();
@@ -406,13 +491,26 @@ class Calculator {
 
     bracketsAreBalanced(input) {
         const stack = [];
-        const pairs = { ')': '(', ']': '[', '}': '{' };
+
+        const pairs = {
+            ')': '(',
+            ']': '[',
+            '}': '{'
+        };
 
         for (const char of input) {
-            if (['(', '[', '{'].includes(char)) {
+
+            if ('([{'.includes(char)) {
                 stack.push(char);
-            } else if ([')', ']', '}'].includes(char)) {
-                if (!stack.length || stack.pop() !== pairs[char]) return false;
+
+            } else if (')]}'.includes(char)) {
+
+                if (
+                    !stack.length ||
+                    stack.pop() !== pairs[char]
+                ) {
+                    return false;
+                }
             }
         }
 
@@ -422,15 +520,20 @@ class Calculator {
     formatResult(num) {
         if (!Number.isFinite(num)) return 'Error';
 
-        if (Math.abs(num) > 1e10 || (Math.abs(num) < 1e-6 && num !== 0)) {
+        if (
+            Math.abs(num) > 1e10 ||
+            (Math.abs(num) < 1e-6 && num !== 0)
+        ) {
             return num.toExponential(6);
         }
 
-        return Math.round(num * 10 ** CONFIG.DECIMAL_PRECISION) / 10 ** CONFIG.DECIMAL_PRECISION;
+        return Math.round(
+            num * 10 ** CONFIG.DECIMAL_PRECISION
+        ) / 10 ** CONFIG.DECIMAL_PRECISION;
     }
 
     updateDisplay() {
-        // Only update display if it's not currently focused (to allow manual editing)
+        // Only update display if it is not currently focused
         if (document.activeElement !== this.display) {
             this.display.value = this.currentInput || '0';
         }
@@ -439,21 +542,31 @@ class Calculator {
     showError() {
         this.display.value = 'Error';
         this.currentInput = '';
+
         setTimeout(() => this.updateDisplay(), 1500);
     }
 
     loadTheme() {
-        const savedTheme = localStorage.getItem(CONFIG.STORAGE_KEYS.THEME);
-        this.isDarkTheme = savedTheme === null || savedTheme === CONFIG.THEMES.DARK;
+        const savedTheme =
+            localStorage.getItem(CONFIG.STORAGE_KEYS.THEME);
+
+        this.isDarkTheme =
+            savedTheme === null ||
+            savedTheme === CONFIG.THEMES.DARK;
+
         this.applyTheme();
     }
 
     toggleTheme() {
         this.isDarkTheme = !this.isDarkTheme;
+
         this.applyTheme();
+
         localStorage.setItem(
             CONFIG.STORAGE_KEYS.THEME,
-            this.isDarkTheme ? CONFIG.THEMES.DARK : CONFIG.THEMES.LIGHT
+            this.isDarkTheme
+                ? CONFIG.THEMES.DARK
+                : CONFIG.THEMES.LIGHT
         );
     }
 
@@ -462,37 +575,73 @@ class Calculator {
         const body = document.body;
 
         if (this.isDarkTheme) {
+
             html.classList.add(CONFIG.THEMES.DARK);
-            body.style.background = 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)';
+
+            body.style.background =
+                'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)';
+
             body.style.color = '#f1f5f9';
+
             this.themeToggle.textContent = '🌙 Dark';
-            this.themeToggle.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
-            this.themeToggle.classList.add('bg-blue-600', 'hover:bg-blue-700');
+
+            this.themeToggle.classList.remove(
+                'bg-yellow-600',
+                'hover:bg-yellow-700'
+            );
+
+            this.themeToggle.classList.add(
+                'bg-blue-600',
+                'hover:bg-blue-700'
+            );
+
         } else {
+
             html.classList.remove(CONFIG.THEMES.DARK);
-            body.style.background = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)';
+
+            body.style.background =
+                'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #f8fafc 100%)';
+
             body.style.color = '#1e293b';
+
             this.themeToggle.textContent = '☀️ Light';
-            this.themeToggle.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-            this.themeToggle.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+
+            this.themeToggle.classList.remove(
+                'bg-blue-600',
+                'hover:bg-blue-700'
+            );
+
+            this.themeToggle.classList.add(
+                'bg-yellow-600',
+                'hover:bg-yellow-700'
+            );
         }
     }
 
     toggleMode() {
         this.isScientificMode = !this.isScientificMode;
+
         this.scientificButtons.classList.toggle('hidden');
-        this.modeToggle.textContent = this.isScientificMode ? 'Scientific' : 'Basic';
+
+        this.modeToggle.textContent =
+            this.isScientificMode
+                ? 'Scientific'
+                : 'Basic';
+
         this.modeToggle.classList.toggle('bg-green-600');
         this.modeToggle.classList.toggle('bg-blue-600');
     }
 
     loadHistory() {
         try {
-            const savedHistory = localStorage.getItem(CONFIG.STORAGE_KEYS.HISTORY);
+            const savedHistory =
+                localStorage.getItem(CONFIG.STORAGE_KEYS.HISTORY);
+
             if (savedHistory) {
                 this.history = JSON.parse(savedHistory);
                 this.renderHistory();
             }
+
         } catch {
             this.history = [];
         }
@@ -507,7 +656,11 @@ class Calculator {
         });
 
         if (this.history.length > CONFIG.MAX_HISTORY_ITEMS) {
-            this.history = this.history.slice(0, CONFIG.MAX_HISTORY_ITEMS);
+            this.history =
+                this.history.slice(
+                    0,
+                    CONFIG.MAX_HISTORY_ITEMS
+                );
         }
 
         this.saveHistory();
@@ -516,15 +669,20 @@ class Calculator {
 
     renderHistory() {
         if (this.history.length === 0) {
+
             this.historyContainer.innerHTML =
                 '<p class="text-blue-300 text-center py-4">No calculations yet</p>';
+
             return;
         }
 
         this.historyContainer.innerHTML = '';
 
         this.history.forEach(item => {
-            const historyElement = document.createElement('div');
+
+            const historyElement =
+                document.createElement('div');
+
             historyElement.className =
                 'bg-slate-600 hover:bg-slate-500 p-3 rounded-lg transition-colors cursor-pointer group flex justify-between items-center';
 
@@ -538,40 +696,62 @@ class Calculator {
 
             historyElement.querySelector('.font-mono').textContent =
                 `${item.expression} = ${item.result}`;
-            historyElement.querySelector('.text-xs').textContent = item.timestamp;
+
+            historyElement.querySelector('.text-xs').textContent =
+                item.timestamp;
 
             historyElement.addEventListener('click', e => {
+
                 if (!e.target.classList.contains('delete-btn')) {
-                    this.currentInput = item.expression;
+
+                    this.currentInput =
+                        item.expression;
+
                     this.updateDisplay();
                 }
             });
 
-            historyElement.querySelector('.delete-btn').addEventListener('click', e => {
-                e.stopPropagation();
-                this.deleteHistoryItem(item.id);
-            });
+            historyElement
+                .querySelector('.delete-btn')
+                .addEventListener('click', e => {
+
+                    e.stopPropagation();
+
+                    this.deleteHistoryItem(item.id);
+                });
 
             this.historyContainer.appendChild(historyElement);
         });
     }
 
     deleteHistoryItem(id) {
-        this.history = this.history.filter(item => item.id !== id);
+        this.history =
+            this.history.filter(
+                item => item.id !== id
+            );
+
         this.saveHistory();
         this.renderHistory();
     }
 
     clearHistory() {
-        if (confirm('Are you sure you want to clear all calculation history?')) {
+        if (
+            confirm(
+                'Are you sure you want to clear all calculation history?'
+            )
+        ) {
             this.history = [];
+
             this.saveHistory();
             this.renderHistory();
         }
     }
 
     saveHistory() {
-        localStorage.setItem(CONFIG.STORAGE_KEYS.HISTORY, JSON.stringify(this.history));
+        localStorage.setItem(
+            CONFIG.STORAGE_KEYS.HISTORY,
+            JSON.stringify(this.history)
+        );
     }
 
     showModal() {
@@ -586,8 +766,15 @@ class Calculator {
 
     toggleHistory() {
         this.historySection.classList.toggle('hidden');
-        this.historyArrow.style.transform = this.historySection.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+
+        this.historyArrow.style.transform =
+            this.historySection.classList.contains('hidden')
+                ? 'rotate(0deg)'
+                : 'rotate(180deg)';
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => new Calculator());
+document.addEventListener(
+    'DOMContentLoaded',
+    () => new Calculator()
+);
